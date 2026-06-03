@@ -90,18 +90,14 @@ function frameLoaded(frame) {
  *
  */
 function displaySpines() {
-  const spineDisplayPromises = [];
-
   let index = 0;
   this._frames.forEach(frame => {
     const spineItem = this._book.getSpineItem(this._currentSpineItemIndex + index);
     if (spineItem) {
-      spineDisplayPromises.push(loadFrame(frame, this._book.hash, spineItem.href));
+      loadFrame(frame, this._book.hash, spineItem.href);
     }
     index++;
   });
-
-  return Promise.all(spineDisplayPromises);
 }
 
 function createFrame(index) {
@@ -118,11 +114,8 @@ function createFrame(index) {
  * @param href The relative URL to a .html file inside the epub
  */
 function loadFrame(frame, hash, href) {
-  return new Promise(resolve => {
-    frame.style.opacity = '0';
-    frame.setAttribute('src', `___/${hash}/${href}`);
-    resolve(frame);
-  });
+  frame.style.opacity = '0';
+  frame.setAttribute('src', `___/${hash}/${href}`);
 }
 
 function fitContent(frame) {

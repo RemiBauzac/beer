@@ -1,6 +1,7 @@
+
 const config = {
   version: 'ninja-11',
-  epubPattern: /___\/(\w+)\/(.*)$/,
+  zipPattern: /___\/(\w+)\/(.*)$/,
   cachePattern: /\.(?:css|js|jpg|png|svg|ttf|woff|eot|otf|html|xhtml|mp3|m4a)$/,
   debug: true
 };
@@ -25,7 +26,7 @@ const mimeTypeMap = {
 };
 
 if (config.debug === false) {
-  console.debug = function() {
+  console.debug = function () {
   };
 }
 
@@ -38,22 +39,21 @@ zip.configure({
  *  - clean old cache entries
  *  - force clients claim
  */
-self.addEventListener('activate', function(event) {
-  function onActivate(version) {
-    return caches.keys()
-      .then(cacheKeys => {
-        const oldCacheKeys = cacheKeys.filter(key => (key.indexOf(version) !== 0) && (key.indexOf('ebook') !== 0));
-        const deletePromises = oldCacheKeys.map(oldKey => caches.delete(oldKey));
-        return Promise.all(deletePromises);
-      });
+self.addEventListener('activate', function (event) {
+  async function onActivate(version) {
+    const cacheKeys = await caches.keys();
+    const oldCacheKeys = cacheKeys.filter(key => (key.indexOf(version) !== 0) && (key.indexOf('ebook') !== 0));
+    return Promise.all(oldCacheKeys.map(oldKey => caches.delete(oldKey)));
   }
 
   console.debug('[BEER-SW] Activate');
-  event.waitUntil(onActivate(config.version).then(function() {
+  event.waitUntil((async () => {
+    await onActivate(config.version);
     console.debug(`[BEER-SW] Claiming clients for version ${config.version}`);
-    self.clients.matchAll({ includeUncontrolled: true }).then(clients => console.debug('[BEER-SW] Clients', clients.map(c => c.url)));
+    const clients = await self.clients.matchAll({ includeUncontrolled: true });
+    console.debug('[BEER-SW] Clients', clients.map(c => c.url));
     return self.clients.claim();
-  }));
+  })());
 });
 
 /**
@@ -69,11 +69,11 @@ self.addEventListener('install', event => {
  * The only message received is the epub data with its URL
  */
 self.addEventListener('message', event => {
-  if (!self.epubs) {
-    self.epubs = {};
+  if (!self.zips) {
+    self.zips = {};
   }
 
-  self.epubs[event.data.hash] = {
+  self.zips[event.data.hash] = {
     blob: event.data.blob,
     url: event.data.url,
     encryptedItems: []
@@ -92,11 +92,11 @@ self.addEventListener('fetch', event => {
     const request = event.request;
     const url = new URL(request.url);
     const criteria = {
-      matchesPathPattern: opts.epubPattern.test(url.pathname),
+      matchesPathPattern: opts.zipPattern.test(url.pathname),
       isGETRequest: request.method === 'GET',
       isFromMyOrigin: url.origin === self.location.origin
     };
-    const failingCriteria = Object.keys(criteria).filter(function(criteriaKey) {
+    const failingCriteria = Object.keys(criteria).filter(function (criteriaKey) {
       return !criteria[criteriaKey];
     });
     return !failingCriteria.length;
@@ -104,17 +104,22 @@ self.addEventListener('fetch', event => {
 
   function onFetch(event, options) {
     const request = event.request;
-    const epubFileMatch = request.url.match(options.epubPattern);
-
-    if (epubFileMatch && epubFileMatch.length > 0) {
-      const epubHash = epubFileMatch[1];
-      const filePath = epubFileMatch[2];
-      event.respondWith(
-        fetchFromCache(request)
-          .catch(() => getFileInEpub(epubHash, filePath))
-          .then(response => addToCache(cacheName(epubHash), options, request, response))
-          .catch(notFoundResponse())
-      );
+    const zipFileMatch = request.url.match(options.zipPattern);
+    if (zipFileMatch && zipFileMatch.length > 0) {
+      const hash = zipFileMatch[1];
+      const filePath = zipFileMatch[2];
+      event.respondWith((async () => {
+        try {
+          let response;
+          response = await fetchFromCache(request);
+          if (response == null) {
+            response = await getFileInEpub(hash, filePath);
+          }
+          return addToCache(cacheName(hash), options, request, response);
+        } catch {
+          return notFoundResponse();
+        }
+      })());
     }
   }
 
@@ -137,37 +142,35 @@ function getZipResponse(mimeType, arrayBuffer) {
   return new Response(new Blob([arrayBuffer], { type: mimeType }), init);
 }
 
-function getZipFs(epubHash) {
-  if (self.epubs[epubHash].zip) {
-    return Promise.resolve(self.epubs[epubHash].zip)
+async function getZipFs(epubHash) {
+  if (self.zips[epubHash].zip) {
+    return self.zips[epubHash].zip;
   }
-  else {
-    self.epubs[epubHash].zip = new zip.fs.FS();
-    if (self.epubs[epubHash].blob) {
-      return self.epubs[epubHash].zip.importBlob(self.epubs[epubHash].blob);
-    }
-    else {
-      return self.epubs[epubHash].zip.importHttpContent(self.epubs[epubHash].url, {
-        preventHeadRequest: false,
-        useRangeHeader: true,
-      });
-    }
+  self.zips[epubHash].zip = new zip.fs.FS();
+  if (self.zips[epubHash].blob) {
+    return self.zips[epubHash].zip.importBlob(self.zips[epubHash].blob);
   }
+  return self.zips[epubHash].zip.importHttpContent(self.zips[epubHash].url, {
+    preventHeadRequest: false,
+    useRangeHeader: false,
+    forceRangeRequests: false
+  });
 }
 
-function getFileInEpub(epubHash, filePath) {
+async function getFileInEpub(epubHash, filePath) {
   console.debug(`[BEER-SW] fetching ${filePath} from the epub file`);
-  return getZipFs(epubHash).then(() => {
-    const entry = self.epubs[epubHash].zip.find(filePath)
-    if (!entry) {
-      return Promise.reject(`${filePath} not found in zip file`);
-    }
-    return entry.getUint8Array();
-  }, () => {
-    return Promise.reject("Cannot get zipfs for file");
-  })
-  .then(data => FileDecryptor.decrypt(self.epubs[epubHash], filePath, data))
-  .then(data => getZipResponse(getMimeTypeFromFileExtension(filePath), data))
+  try {
+    await getZipFs(epubHash);
+  } catch {
+    throw new Error('Cannot get zipfs for file');
+  }
+  const entry = self.zips[epubHash].zip.find(filePath);
+  if (!entry) {
+    throw new Error(`${filePath} not found in zip file`);
+  }
+  const data = await entry.getUint8Array();
+  const decryptedData = await FileDecryptor.decrypt(self.zips[epubHash], filePath, data);
+  return getZipResponse(getMimeTypeFromFileExtension(filePath), decryptedData);
 }
 
 function getMimeTypeFromFileExtension(filePath) {
@@ -179,30 +182,29 @@ function getMimeTypeFromFileExtension(filePath) {
 }
 
 function cacheName(hash) {
-  return `ebook-${hash}`;
+  return `zip-${hash}`;
 }
 
 function addToCache(cacheKey, options, request, response) {
   if (response.ok && request.url.match(options.cachePattern)) {
     const copy = response.clone();
-    caches.open(cacheKey).then(cache => {
+    (async () => {
+      const cache = await caches.open(cacheKey);
       cache.put(request, copy).catch(console.warn);
-    });
+    })();
   }
   return response;
 }
 
-function fetchFromCache(request) {
-  return caches.match(request).then(response => {
-    if (response) {
-      console.debug(`[BEER-SW] fetching ${request.url} from cache`);
-      return response;
-    }
-    // eslint-disable-next-line prefer-promise-reject-errors
-    return Promise.reject();
-  });
+async function fetchFromCache(request) {
+  const response = await caches.match(request);
+  if (response) {
+    console.debug(`[BEER-SW] fetching ${request.url} from cache`);
+    return response;
+  }
+  return null;
 }
 
 function notFoundResponse(error) {
-  return new Response(error, { status: 404 });
+  return new Response(error?.message ?? 'Not found', { status: 404 });
 }

@@ -120,7 +120,7 @@ function createFrame() {
  * @param spineItemIndex
  * @param position
  */
-function displaySpine(spineItemIndex, position = 0) {
+async function displaySpine(spineItemIndex, position = 0) {
   this._currentSpineItemIndex = spineItemIndex;
   this._position = position;
 
@@ -128,49 +128,40 @@ function displaySpine(spineItemIndex, position = 0) {
   this._currentSpineItemCfi = spineItem.cfi;
 
   if (!spineItem) {
-    return Promise.resolve();
+    return;
   }
 
-  return loadFrame.call(this, spineItem.href).then(frame => {
-    this._contentHtml = frame.contentDocument.querySelector('html');
-    zoom.call(this, this._displayOptions.ratio);
-
-    this._frame.contentWindow.scrollBy(Math.round(this._contentHtml.scrollWidth * position / 100), 0);
-
-    frame.style.opacity = '1';
-
-    computeCfi(this._currentSpineItemCfi, this._contentHtml);
-  });
+  const frame = await loadFrame.call(this, spineItem.href);
+  this._contentHtml = frame.contentDocument.querySelector('html');
+  zoom.call(this, this._displayOptions.ratio);
+  this._frame.contentWindow.scrollBy(Math.round(this._contentHtml.scrollWidth * position / 100), 0);
+  frame.style.opacity = '1';
+  computeCfi(this._currentSpineItemCfi, this._contentHtml);
 }
 
 /**
  *
  * @param cfi
  */
-function displaySpineFromCfi(cfi) {
+async function displaySpineFromCfi(cfi) {
   const cfiObject = epubCfi.parse(cfi);
-
   this._currentSpineItemIndex = cfiObject.spinePos;
 
   const spineItem = this._book.getSpineItem(this._currentSpineItemIndex);
   this._currentSpineItemCfi = spineItem.cfi;
 
   if (!spineItem) {
-    return Promise.resolve();
+    return;
   }
 
-  return loadFrame.call(this, spineItem.href).then(frame => {
-    this._contentHtml = frame.contentDocument.querySelector('html');
-
-    const htmlQuery = epubCfi.generateQueryFromSteps(cfiObject.steps);
-    const elementToDisplay = this._contentHtml.querySelector(htmlQuery);
-    const position = 100 * elementToDisplay.getClientRects()[0].left / this._contentHtml.scrollWidth;
-
-    this._frame.contentWindow.scrollBy(Math.round(this._contentHtml.scrollWidth * position / 100), 0);
-    frame.style.opacity = '1';
-
-    computeCfi(this._currentSpineItemCfi, this._contentHtml);
-  });
+  const frame = await loadFrame.call(this, spineItem.href);
+  this._contentHtml = frame.contentDocument.querySelector('html');
+  const htmlQuery = epubCfi.generateQueryFromSteps(cfiObject.steps);
+  const elementToDisplay = this._contentHtml.querySelector(htmlQuery);
+  const position = 100 * elementToDisplay.getClientRects()[0].left / this._contentHtml.scrollWidth;
+  this._frame.contentWindow.scrollBy(Math.round(this._contentHtml.scrollWidth * position / 100), 0);
+  frame.style.opacity = '1';
+  computeCfi(this._currentSpineItemCfi, this._contentHtml);
 }
 
 /**

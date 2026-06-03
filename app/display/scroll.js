@@ -18,8 +18,10 @@ export default class Scroll extends EventedMixin(Base) {
 
     this._currentSpineItemIndex = -1;
 
-    // display 2 spines at start
-    displayNextSpine.call(this).then(displayNextSpine.bind(this));
+    (async () => {
+      await displayNextSpine.call(this);
+      await displayNextSpine.call(this);
+    })();
   }
 
   /**
@@ -120,12 +122,12 @@ export default class Scroll extends EventedMixin(Base) {
 /**
  *
  */
-function displayNextSpine() {
+async function displayNextSpine() {
   this._currentSpineItemIndex += 1;
   const spineItem = this._book.getSpineItem(this._currentSpineItemIndex);
 
   if (!spineItem) {
-    return Promise.resolve();
+    return;
   }
 
   const frameId = `beer-epub-frame-${this._currentSpineItemIndex}`;
@@ -134,15 +136,13 @@ function displayNextSpine() {
   frame.setAttribute('sandbox', 'allow-same-origin allow-scripts');
   this._element.appendChild(frame);
 
-  return loadFrame.call(this, frame, spineItem.href).then(frame => {
-    zoomFrame.call(this, frame, this._displayRatio);
-
-    frame.style.height = `${frame.contentWindow.document.body.clientHeight + 50}px`;
-    frame.contentWindow.document.body.style.overflow = 'hidden';
-    frame.contentWindow.document.body.style.color = Base.COLOR_SET[this.theme()].color;
-    frame.style.opacity = '1';
-    this._frames.push(frame);
-  });
+  const loadedFrame = await loadFrame.call(this, frame, spineItem.href);
+  zoomFrame.call(this, loadedFrame, this._displayRatio);
+  loadedFrame.style.height = `${loadedFrame.contentWindow.document.body.clientHeight + 50}px`;
+  loadedFrame.contentWindow.document.body.style.overflow = 'hidden';
+  loadedFrame.contentWindow.document.body.style.color = Base.COLOR_SET[this.theme()].color;
+  loadedFrame.style.opacity = '1';
+  this._frames.push(loadedFrame);
 }
 
 /**

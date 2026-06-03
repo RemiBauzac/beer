@@ -1,5 +1,4 @@
 import serviceWorkerInstall from './sw/install';
-import forge from './lib/forge.sha1';
 import Opf from './model/opf';
 import Book from './model/book';
 import Encryption from './model/encryption';
@@ -16,26 +15,23 @@ export default class Beer {
     this._book = book;
   }
 
-  static init() {
-    return new Promise((resolve, reject) => {
-      serviceWorkerInstall()
-        .then(registration => {
-          // registration.onupdatefound = () => onServiceWorkerUpdate(registration); // should do something with that
+  static async init() {
+    await serviceWorkerInstall();
+    // registration.onupdatefound = () => onServiceWorkerUpdate(registration); // should do something with that
 
-          if (navigator.serviceWorker.controller !== null) {
-            return resolve();
+    if (navigator.serviceWorker.controller !== null) {
+      return;
+    }
+
+    await new Promise(resolve => {
+      navigator.serviceWorker.oncontrollerchange = function () {
+        this.controller.onstatechange = function () {
+          if (this.state === 'activated') {
+            window.location.reload(); // SW do not control the page immediately in FF :(
+            resolve();
           }
-
-          navigator.serviceWorker.oncontrollerchange = function() {
-            this.controller.onstatechange = function() {
-              if (this.state === 'activated') {
-                window.location.reload(); // SW do not control the page immediately in FF :(
-                resolve();
-              }
-            };
-          };
-        })
-        .catch(reject);
+        };
+      };
     });
   }
 
@@ -45,12 +41,16 @@ export default class Beer {
    * @param url The URL of the epub
    * @returns Promise that resolves with the BEER reader
    */
-  static withBookUrl(url) {
-    return sendBookUrlToSw(url).then(h => loadBook(h))
-    .then(book => new Beer(book))
-    .catch(console.error);
+  static async withBookUrl(url) {
+    try {
+      const h = await sendBookUrlToSw(url);
+      const book = await loadBook(h);
+      return new Beer(book);
+    } catch (e) {
+      console.error(e);
+    }
   }
-  
+
   get book() {
     return this._book;
   }
@@ -94,21 +94,21 @@ export default class Beer {
   }
 }
 
-function loadBook(hash) {
-  return getOpf(hash)
-    .then(opf => Promise.all([opf, getEncryptionData(hash, opf)]))
-    .then(([opf, encryptionData]) => new Book(hash, opf.metadata, opf.spineItems, encryptionData));
+async function loadBook(hash) {
+  const opf = await getOpf(hash);
+  const encryptionData = await getEncryptionData(hash, opf);
+  return new Book(hash, opf.metadata, opf.spineItems, encryptionData);
 }
 
-function getFile(hash, path, format = 'string') {
-  return fetch(`/___/${hash}/${path}`).then((response) => {
-    if (format === 'string') {
-      return response.text()
-    }
-    else {
-      return response.arrayBuffer()
-    }
-  });
+async function getFile(hash, path, format = 'string') {
+  const response = await fetch(`/___/${hash}/${path}`);
+  if (!response.ok) {
+    throw new Error(`${path}: ${response.status}`);
+  }
+  if (format === 'string') {
+    return response.text();
+  }
+  return response.arrayBuffer();
 }
 
 function getBasePath(contentFilePath) {
@@ -123,36 +123,32 @@ function getOpfFilePath(container) {
   return container.querySelector('rootfile').getAttribute('full-path');
 }
 
-function getOpf(hash) {
+async function getOpf(hash) {
   const parser = new DOMParser();
-  return getFile(hash, 'META-INF/container.xml')
-    .then(containerXml => {
-      const container = parser.parseFromString(containerXml.trim(), 'text/xml');
-      const opfFilePath = getOpfFilePath(container);
-
-      return Promise.all([getBasePath(opfFilePath), getFile(hash, opfFilePath)]);
-    })
-    .then(([basePath, opfXml]) => Opf.create(basePath, parser.parseFromString(opfXml.trim(), 'text/xml')));
+  const containerXml = await getFile(hash, 'META-INF/container.xml');
+  const container = parser.parseFromString(containerXml.trim(), 'text/xml');
+  const opfFilePath = getOpfFilePath(container);
+  const basePath = getBasePath(opfFilePath);
+  const opfXml = await getFile(hash, opfFilePath);
+  return Opf.create(basePath, parser.parseFromString(opfXml.trim(), 'text/xml'));
 }
 
-function getEncryptionData(hash, opf) {
+async function getEncryptionData(hash, opf) {
   const parser = new DOMParser();
-  return getFile(hash, 'META-INF/encryption.xml')
-    .then(encryptionXml => {
-      const xmlDoc = parser.parseFromString(encryptionXml.trim(), 'text/xml');
-      return Encryption.create(xmlDoc, opf);
-    }, () => Encryption.empty());
+  let encryptionXml;
+  try {
+    encryptionXml = await getFile(hash, 'META-INF/encryption.xml');
+  } catch {
+    return Encryption.empty();
+  }
+  const xmlDoc = parser.parseFromString(encryptionXml.trim(), 'text/xml');
+  return Encryption.create(xmlDoc, opf);
 }
 
-function sendBookUrlToSw(url) {
-  return new Promise(resolve => {
-    const h = hashCode(url);
-    navigator.serviceWorker.controller.postMessage({
-      hash: hashCode(url),
-      url: url,
-    });
-    resolve(h);
-  });
+async function sendBookUrlToSw(url) {
+  const h = await hashCode(url);
+  navigator.serviceWorker.controller.postMessage({ hash: h, url });
+  return h;
 }
 
 function getDefaultDisplayOptions() {
@@ -165,8 +161,7 @@ function getDefaultDisplayOptions() {
   };
 }
 
-function hashCode(string) {
-  const md = forge.md.sha1.create();
-  md.update(string, 'utf8');
-  return md.digest().toHex();
+async function hashCode(string) {
+  const buffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(string));
+  return Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0')).join('');
 }

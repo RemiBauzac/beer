@@ -2,7 +2,7 @@
 
 BEER is an ePub reader prototype, based on recent javascript technologies:
 * Service workers: to get ePub content directly
-* Modules
+* ES Modules
 * Arrow functions
 
 
@@ -13,15 +13,22 @@ You need to have
 
 ## Start Beer
 
-You can start beer with the webpack dev server :
-
 ```
-#beer> npm install
-#beer> npm run dev 
-...
+#beer> make install
+#beer> make dev
 ```
 
-This command build distrib and start it into the HTTPs webpack server.
+This builds and starts the app on a local HTTPS Vite dev server.
 
-To allow the service worker to be loaded, you need to add the webpack localhost certificate (automatically generated) into your system (or browser) trust store.
-You can download the certificate from you browser (on the left side of the URL bar, most of the time).
+To allow the service worker to be loaded, you need to add the auto-generated localhost certificate to your system (or browser) trust store.
+You can download the certificate from your browser (on the left side of the URL bar).
+
+## Docker
+
+```
+#beer> make docker-build   # build image (runs npm build inside)
+#beer> make docker-run     # serve on :80 / :443 (beer.local)
+#beer> make docker-stop    # stop and remove container
+```
+
+Add `beer.local` to your `/etc/hosts` and trust the self-signed certificate generated during `docker-build`.

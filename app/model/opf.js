@@ -1,4 +1,4 @@
-'use strict';
+
 
 import SpineItem from './spine-item';
 import domToJson from '../lib/dom-to-json';
@@ -19,7 +19,7 @@ export default class Opf {
 
     const spineItemsRefs = [].concat(domToJson(xmlDoc.querySelector('spine')).itemref || []).map(item => item._idref);
     opf.spineItems = [].concat(domToJson(xmlDoc.querySelector('manifest')).item || [])
-      .filter(item => spineItemsRefs.indexOf(item._id) >= 0)
+      .filter(item => spineItemsRefs.includes(item._id))
       .map(spineItemXml => {
         const spineItem = SpineItem.fromXml(spineItemXml);
         spineItem.cfi = epubCfi.generateChapterComponent(spineNodeIndex, spineItemsRefs.indexOf(spineItem.id), spineItem.id);

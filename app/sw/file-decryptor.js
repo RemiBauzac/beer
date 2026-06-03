@@ -3,7 +3,7 @@ const decryptionMethods = {
   'http://ns.adobe.com/pdf/enc#RC': unObfusqAdobe
 };
 
-// eslint-disable-next-line no-unused-vars
+ 
 class FileDecryptor {
   static decrypt(epub, filePath, data) {
     if (filePath in epub.encryptedItems) {

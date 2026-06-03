@@ -3,7 +3,7 @@ import EventedMixin from '../mixin/evented';
 import { debounce } from '../tools';
 
 export default class Fixed extends EventedMixin(Base) {
-  constructor(element, displayOptions) {
+  constructor(_element, _displayOptions) {
     super(...arguments);
 
     this._element.classList.add('fixed');
@@ -119,7 +119,7 @@ function loadFrame(frame, hash, href) {
 }
 
 function fitContent(frame) {
-  const document = frame.contentWindow.document;
+  const {document} = frame.contentWindow;
   const body = document.querySelector('body');
 
   this._displayRatio = frame.clientHeight / body.clientHeight;

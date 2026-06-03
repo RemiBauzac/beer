@@ -53,7 +53,7 @@ class Base {
   }
 
   theme() {
-    let theme = this._displayOptions.theme;
+    let {theme} = this._displayOptions;
     if (theme === Base.AUTO_THEME) {
       if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
         theme = Base.NIGHT_THEME;

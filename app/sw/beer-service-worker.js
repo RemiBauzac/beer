@@ -25,29 +25,29 @@ const mimeTypeMap = {
   xhtml: 'application/xhtml+xml'
 };
 
-if (config.debug === false) {
-  console.debug = function () {
+if (!config.debug) {
+  console.debug = function() {
   };
 }
 
 zip.configure({
   useWebWorkers: false
-})
+});
 
 /**
  * On SW activation:
  *  - clean old cache entries
  *  - force clients claim
  */
-self.addEventListener('activate', function (event) {
+self.addEventListener('activate', (event) => {
   async function onActivate(version) {
     const cacheKeys = await caches.keys();
-    const oldCacheKeys = cacheKeys.filter(key => (key.indexOf(version) !== 0) && (key.indexOf('ebook') !== 0));
-    return Promise.all(oldCacheKeys.map(oldKey => caches.delete(oldKey)));
+    const oldCacheKeys = cacheKeys.filter(key => (!key.startsWith(version)) && (!key.startsWith('ebook')));
+    return await Promise.all(oldCacheKeys.map(async oldKey => await caches.delete(oldKey)));
   }
 
   console.debug('[BEER-SW] Activate');
-  event.waitUntil((async () => {
+  event.waitUntil((async() => {
     await onActivate(config.version);
     console.debug(`[BEER-SW] Claiming clients for version ${config.version}`);
     const clients = await self.clients.matchAll({ includeUncontrolled: true });
@@ -69,9 +69,7 @@ self.addEventListener('install', event => {
  * The only message received is the epub data with its URL
  */
 self.addEventListener('message', event => {
-  if (!self.zips) {
-    self.zips = {};
-  }
+  self.zips ||= {};
 
   self.zips[event.data.hash] = {
     blob: event.data.blob,
@@ -89,32 +87,28 @@ self.addEventListener('message', event => {
  */
 self.addEventListener('fetch', event => {
   function shouldHandleFetch(event, opts) {
-    const request = event.request;
+    const {request} = event;
     const url = new URL(request.url);
     const criteria = {
       matchesPathPattern: opts.zipPattern.test(url.pathname),
       isGETRequest: request.method === 'GET',
       isFromMyOrigin: url.origin === self.location.origin
     };
-    const failingCriteria = Object.keys(criteria).filter(function (criteriaKey) {
-      return !criteria[criteriaKey];
-    });
+    const failingCriteria = Object.keys(criteria).filter((criteriaKey) => !criteria[criteriaKey]);
     return !failingCriteria.length;
   }
 
   function onFetch(event, options) {
-    const request = event.request;
+    const {request} = event;
     const zipFileMatch = request.url.match(options.zipPattern);
     if (zipFileMatch && zipFileMatch.length > 0) {
       const hash = zipFileMatch[1];
       const filePath = zipFileMatch[2];
-      event.respondWith((async () => {
+      event.respondWith((async() => {
         try {
           let response;
           response = await fetchFromCache(request);
-          if (response == null) {
-            response = await getFileInEpub(hash, filePath);
-          }
+          response ??= await getFileInEpub(hash, filePath);
           return addToCache(cacheName(hash), options, request, response);
         } catch {
           return notFoundResponse();
@@ -188,7 +182,7 @@ function cacheName(hash) {
 function addToCache(cacheKey, options, request, response) {
   if (response.ok && request.url.match(options.cachePattern)) {
     const copy = response.clone();
-    (async () => {
+    (async() => {
       const cache = await caches.open(cacheKey);
       cache.put(request, copy).catch(console.warn);
     })();

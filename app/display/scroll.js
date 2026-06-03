@@ -18,7 +18,7 @@ export default class Scroll extends EventedMixin(Base) {
 
     this._currentSpineItemIndex = -1;
 
-    (async () => {
+    (async() => {
       await displayNextSpine.call(this);
       await displayNextSpine.call(this);
     })();
@@ -107,7 +107,7 @@ export default class Scroll extends EventedMixin(Base) {
     this._element.style['background-color'] = Base.COLOR_SET[theme]['background-color'];
 
     this._frames.forEach(frame => {
-      const document = frame.contentWindow.document;
+      const {document} = frame.contentWindow;
       const html = document.querySelector('html');
 
       frame.style.height = `${document.body.clientHeight + 100}px`;
@@ -149,8 +149,8 @@ async function displayNextSpine() {
  * @param frame The frame where to load the spine
  * @param href The relative URL to a .html file inside the epub
  */
-function loadFrame(frame, href) {
-  return new Promise(resolve => {
+async function loadFrame(frame, href) {
+  return await new Promise(resolve => {
     frame.style.opacity = '0';
     frame.setAttribute('src', `___/${this._book.hash}/${href}`);
 
@@ -187,5 +187,5 @@ function zoom(multiplier) {
   if (multiplier === 1) {
     return;
   }
-  this._frames.forEach(frame => zoomFrame(frame, multiplier));
+  this._frames.forEach(frame => { zoomFrame(frame, multiplier); });
 }

@@ -6,7 +6,7 @@ import { debounce } from '../tools';
 const epubCfi = new EpubCfi();
 
 export default class Page extends EventedMixin(Base) {
-  constructor(element, displayOptions) {
+  constructor(_element, _displayOptions) {
     super(...arguments);
 
     this._frame = createFrame();
@@ -167,8 +167,8 @@ async function displaySpineFromCfi(cfi) {
 /**
  * @param href The relative URL to a .html file inside the epub
  */
-function loadFrame(href) {
-  return new Promise(resolve => {
+async function loadFrame(href) {
+  return await new Promise(resolve => {
     this._frame.style.opacity = '0';
     this._frame.setAttribute('src', `___/${this._book.hash}/${href}`);
 

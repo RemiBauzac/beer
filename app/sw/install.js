@@ -1,10 +1,10 @@
-'use strict';
 
-function getRegistration() {
+
+async function getRegistration() {
   if (!('serviceWorker' in navigator)) {
-    return Promise.reject(new Error('Service workers aren\'t supported in this browser.'));
+    return await Promise.reject(new Error('Service workers aren\'t supported in this browser.'));
   }
-  return navigator.serviceWorker.register('/beer-service-worker.js');
+  return await navigator.serviceWorker.register('/beer-service-worker.js');
 }
 
 export default getRegistration;

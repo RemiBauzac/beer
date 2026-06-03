@@ -10,14 +10,14 @@ const EventedMixin = (superclass) => class extends superclass {
   }
 
   off(event, callback) {
-    if (event in this._events === false) {
+    if (!(event in this._events)) {
       return;
     }
     this._events[event].splice(this._events[event].indexOf(callback), 1);
   }
 
   trigger(event) {
-    if (event in this._events === false) return;
+    if (!(event in this._events)) return;
     for (let i = 0; i < this._events[event].length; i++) {
       this._events[event][i].apply(this, Array.from(arguments).slice(1));
     }

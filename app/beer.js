@@ -24,8 +24,8 @@ export default class Beer {
     }
 
     await new Promise(resolve => {
-      navigator.serviceWorker.oncontrollerchange = function () {
-        this.controller.onstatechange = function () {
+      navigator.serviceWorker.oncontrollerchange = function() {
+        this.controller.onstatechange = function() {
           if (this.state === 'activated') {
             window.location.reload(); // SW do not control the page immediately in FF :(
             resolve();
@@ -106,15 +106,15 @@ async function getFile(hash, path, format = 'string') {
     throw new Error(`${path}: ${response.status}`);
   }
   if (format === 'string') {
-    return response.text();
+    return await response.text();
   }
-  return response.arrayBuffer();
+  return await response.arrayBuffer();
 }
 
 function getBasePath(contentFilePath) {
   const result = contentFilePath.match(/^(\w*)\/\w*\.opf$/);
   if (result) {
-    return result[1] + '/';
+    return `${result[1] }/`;
   }
   return '';
 }
@@ -142,7 +142,7 @@ async function getEncryptionData(hash, opf) {
     return Encryption.empty();
   }
   const xmlDoc = parser.parseFromString(encryptionXml.trim(), 'text/xml');
-  return Encryption.create(xmlDoc, opf);
+  return await Encryption.create(xmlDoc, opf);
 }
 
 async function sendBookUrlToSw(url) {

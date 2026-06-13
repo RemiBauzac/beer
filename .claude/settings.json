@@ -27,7 +27,11 @@
     "allow": [
       "Bash(npm run *)",
       "Bash(npm audit *)",
-      "Bash(bd stats *)"
+      "Bash(bd stats *)",
+      "Bash(bd list *)",
+      "Bash(bd remember *)",
+      "Bash(bd create *)",
+      "Bash(bd init *)"
     ]
   }
 }

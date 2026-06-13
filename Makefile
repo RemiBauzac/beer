@@ -1,11 +1,10 @@
 .PHONY: install dev build preview test test-watch test-ui e2e e2e-ui lint lint-fix format typecheck check size clean help
 
-# Install dependencies and verify mkcert is available
+# Install dependencies
 install:
 	npm install
-	@command -v mkcert >/dev/null 2>&1 || echo "⚠  mkcert not found — run: brew install mkcert && mkcert -install"
 
-# Start dev server (HTTPS if .certs/ exists, HTTP fallback)
+# Start dev server (self-signed HTTPS via @vitejs/plugin-basic-ssl)
 dev:
 	npm run dev
 
@@ -68,7 +67,7 @@ clean:
 # Print all targets (default)
 help:
 	@echo ""
-	@echo "  install      npm install + mkcert check"
+	@echo "  install      npm install"
 	@echo "  dev          start dev server"
 	@echo "  build        production build"
 	@echo "  preview      preview production build"

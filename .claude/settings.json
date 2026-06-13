@@ -26,7 +26,8 @@
   "permissions": {
     "allow": [
       "Bash(npm run *)",
-      "Bash(npm audit *)"
+      "Bash(npm audit *)",
+      "Bash(bd stats *)"
     ]
   }
 }

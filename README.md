@@ -1,75 +1,54 @@
-# React + TypeScript + Vite
+# Beer — Offline EPUB Reader
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+PWA-first EPUB reader. Reads files locally, works offline via Service Worker.
 
-Currently, two official plugins are available:
+## Requirements
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Node.js 20+
+- npm 10+
+- Add `127.0.0.1 beer.local` to `/etc/hosts` for HTTPS dev server
 
-## React Compiler
+## Install & run
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
-
-Note: This will impact Vite dev & build performances.
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev       # https://beer.local (self-signed cert — accept browser warning)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Or via Make:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+make install
+make dev
 ```
+
+## Available commands
+
+| Command       | Description                          |
+| ------------- | ------------------------------------ |
+| `make dev`    | Dev server at https://beer.local:443 |
+| `make build`  | Production build                     |
+| `make test`   | Run tests once                       |
+| `make check`  | Typecheck + lint + test (full gate)  |
+| `make lint`   | ESLint                               |
+| `make format` | Prettier                             |
+| `make clean`  | Remove dist, node_modules, caches    |
+
+Run `make help` for full list.
+
+## Tech stack
+
+- React 19 + TypeScript 6 (strict)
+- Vite 8 + vite-plugin-pwa (injectManifest)
+- Tailwind v4 + shadcn/ui (Nova preset)
+- Vitest + @testing-library/react
+- Husky + commitlint (Conventional Commits)
+
+## Commit convention
+
+```
+feat(scope): short description
+fix: short description
+```
+
+Types: `feat` `fix` `refactor` `perf` `docs` `test` `chore` `build` `ci` `style`

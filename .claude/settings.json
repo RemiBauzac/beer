@@ -9,7 +9,16 @@
       "Bash(bd create *)",
       "Bash(bd init *)",
       "Bash(bd dep *)",
-      "Bash(bd close *)"
+      "Bash(bd close *)",
+      "Bash(bd ready *)",
+      "Bash(bd show *)",
+      "Bash(bd update *)",
+      "Bash(npm install *)",
+      "Bash(bd dolt *)",
+      "Bash(npx husky *)",
+      "Bash(git add *)",
+      "Bash(npx eslint *)",
+      "Bash(git commit -m ' *)"
     ]
   },
   "hooks": {

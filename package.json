@@ -33,6 +33,7 @@
     "@zip.js/zip.js": "^2.8.26",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "comlink": "^4.4.2",
     "idb": "^8.0.3",
     "lucide-react": "^1.18.0",
     "next-themes": "^0.4.6",

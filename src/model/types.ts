@@ -27,7 +27,7 @@ export interface ManifestItem {
 export interface EncryptionItem {
   href: string;
   algorithm: 'idpf' | 'adobe';
-  keyData: Uint8Array;
+  keyData?: Uint8Array;
 }
 
 export type BookLayout = 'reflowable' | 'fixed';

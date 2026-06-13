@@ -1,6 +1,6 @@
 import { domToJson, type DomNode } from '@/lib/dom-to-json';
 import { generateChapterCfi } from '@/lib/epub-cfi';
-import type { BookMetadata, ManifestItem, SpineItem } from './types';
+import type { BookLayout, BookMetadata, ManifestItem, SpineItem, SpreadMode } from './types';
 
 export function parseContainer(xml: string): Promise<string> {
   const doc = new DOMParser().parseFromString(xml, 'application/xml');
@@ -15,6 +15,8 @@ export interface OpfData {
   manifest: ManifestItem[];
   spine: SpineItem[];
   encryptionHref: string | null;
+  layout: BookLayout;
+  spreadMode: SpreadMode;
 }
 
 export function parseOpf(opfXml: string, opfPath: string): Promise<OpfData> {
@@ -64,7 +66,7 @@ export function parseOpf(opfXml: string, opfPath: string): Promise<OpfData> {
   }));
   const manifestById = new Map(manifestItems.map((i) => [i.id, i]));
 
-  // Cover detection
+  // Rendition meta (layout + spread)
   const metas = toArray(metaJson['meta']);
   const coverMeta = metas.find((m) => (m['_name'] as string) === 'cover');
   const coverItemId = coverMeta ? (coverMeta['_content'] as string) : undefined;
@@ -72,6 +74,17 @@ export function parseOpf(opfXml: string, opfPath: string): Promise<OpfData> {
     manifestItems.find((i) => i.properties === 'cover-image') ??
     (coverItemId ? manifestById.get(coverItemId) : undefined);
   if (coverItem) metadata.coverHref = coverItem.href;
+
+  const layoutMeta = metas.find((m) => m['_property'] === 'rendition:layout');
+  const layout: BookLayout =
+    typeof layoutMeta?.['__text'] === 'string' && layoutMeta['__text'] === 'pre-paginated'
+      ? 'fixed'
+      : 'reflowable';
+
+  const spreadMeta = metas.find((m) => m['_property'] === 'rendition:spread');
+  const rawSpread = typeof spreadMeta?.['__text'] === 'string' ? spreadMeta['__text'] : '';
+  const spreadMode: SpreadMode =
+    rawSpread === 'none' ? 'none' : rawSpread === 'landscape' ? 'landscape' : 'auto';
 
   // Encryption href (OPF sometimes references it; standard path used by convention)
   const encryptionHref = manifestItems.find((i) => i.href.endsWith('encryption.xml'))?.href ?? null;
@@ -94,7 +107,14 @@ export function parseOpf(opfXml: string, opfPath: string): Promise<OpfData> {
     })
     .filter((i): i is SpineItem => i !== null);
 
-  return Promise.resolve({ metadata, manifest: manifestItems, spine, encryptionHref });
+  return Promise.resolve({
+    metadata,
+    manifest: manifestItems,
+    spine,
+    encryptionHref,
+    layout,
+    spreadMode,
+  });
 }
 
 function toArray(val: unknown): DomNode[] {

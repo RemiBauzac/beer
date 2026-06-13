@@ -15,9 +15,13 @@ export default defineConfig({
       strategies: 'injectManifest',
       srcDir: 'src/sw',
       filename: 'sw.ts',
+      injectRegister: 'auto',
       devOptions: {
         enabled: true,
         type: 'module',
+      },
+      injectManifest: {
+        injectionPoint: undefined,
       },
     }),
     basicSsl({

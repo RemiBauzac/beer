@@ -32,7 +32,7 @@ export default defineConfig({
   },
   server: {
     host: 'beer.local',
-    port: 443,
+    port: 5173,
   },
   test: {
     environment: 'jsdom',

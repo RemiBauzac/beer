@@ -24,15 +24,15 @@ make dev
 
 ## Available commands
 
-| Command       | Description                          |
-| ------------- | ------------------------------------ |
-| `make dev`    | Dev server at https://beer.local:443 |
-| `make build`  | Production build                     |
-| `make test`   | Run tests once                       |
-| `make check`  | Typecheck + lint + test (full gate)  |
-| `make lint`   | ESLint                               |
-| `make format` | Prettier                             |
-| `make clean`  | Remove dist, node_modules, caches    |
+| Command       | Description                           |
+| ------------- | ------------------------------------- |
+| `make dev`    | Dev server at https://beer.local:5173 |
+| `make build`  | Production build                      |
+| `make test`   | Run tests once                        |
+| `make check`  | Typecheck + lint + test (full gate)   |
+| `make lint`   | ESLint                                |
+| `make format` | Prettier                              |
+| `make clean`  | Remove dist, node_modules, caches     |
 
 Run `make help` for full list.
 

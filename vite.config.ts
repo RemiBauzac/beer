@@ -1,26 +1,49 @@
-import { defineConfig } from 'vite'
-import react, { reactCompilerPreset } from '@vitejs/plugin-react'
-import babel from '@rolldown/plugin-babel'
-import { resolve } from 'path'
-import fs from 'fs'
-
-const certPath = resolve(__dirname, '.certs/cert.pem')
-const keyPath = resolve(__dirname, '.certs/key.pem')
-const httpsConfig =
-  fs.existsSync(certPath) && fs.existsSync(keyPath)
-    ? { cert: fs.readFileSync(certPath), key: fs.readFileSync(keyPath) }
-    : undefined
+import { defineConfig } from 'vite';
+import react, { reactCompilerPreset } from '@vitejs/plugin-react';
+import babel from '@rolldown/plugin-babel';
+import tailwindcss from '@tailwindcss/vite';
+import { VitePWA } from 'vite-plugin-pwa';
+import basicSsl from '@vitejs/plugin-basic-ssl';
+import { resolve } from 'path';
 
 export default defineConfig({
-  plugins: [react(), babel({ presets: [reactCompilerPreset()] })],
+  plugins: [
+    tailwindcss(),
+    react(),
+    babel({ presets: [reactCompilerPreset()] }),
+    VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src/sw',
+      filename: 'sw.ts',
+      devOptions: {
+        enabled: true,
+        type: 'module',
+      },
+    }),
+    basicSsl({
+      name: 'beer',
+      domains: ['beer.local'],
+    }),
+  ],
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
     },
   },
   server: {
-    host: httpsConfig ? 'beer.local' : 'localhost',
-    port: httpsConfig ? 443 : 5173,
-    https: httpsConfig,
+    host: 'beer.local',
+    port: 443,
   },
-})
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: 'src/test/setup.ts',
+    coverage: {
+      include: ['src/lib/**', 'src/model/**'],
+      thresholds: {
+        lines: 80,
+        functions: 80,
+      },
+    },
+  },
+});

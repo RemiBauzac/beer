@@ -18,7 +18,8 @@
       "Bash(npx husky *)",
       "Bash(git add *)",
       "Bash(npx eslint *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   },
   "hooks": {

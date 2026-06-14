@@ -1,10 +1,18 @@
+import { DOMParser as XmlDOMParser } from '@xmldom/xmldom';
 import { domToJson, type DomNode } from '@/lib/dom-to-json';
 import { generateChapterCfi } from '@/lib/epub-cfi';
 import type { BookLayout, BookMetadata, ManifestItem, SpineItem, SpreadMode } from './types';
 
+function parseXml(xml: string, mimeType: string): Document {
+  if (typeof DOMParser !== 'undefined') {
+    return new DOMParser().parseFromString(xml, mimeType as DOMParserSupportedType);
+  }
+  return new XmlDOMParser().parseFromString(xml, mimeType) as unknown as Document;
+}
+
 export function parseContainer(xml: string): Promise<string> {
-  const doc = new DOMParser().parseFromString(xml, 'application/xml');
-  const rootfile = doc.querySelector('rootfile');
+  const doc = parseXml(xml, 'application/xml');
+  const rootfile = doc.getElementsByTagName('rootfile')[0];
   const path = rootfile?.getAttribute('full-path');
   if (!path) return Promise.reject(new Error('No rootfile found in container.xml'));
   return Promise.resolve(path);
@@ -20,12 +28,12 @@ export interface OpfData {
 }
 
 export function parseOpf(opfXml: string, opfPath: string): Promise<OpfData> {
-  const doc = new DOMParser().parseFromString(opfXml, 'application/xml');
+  const doc = parseXml(opfXml, 'application/xml');
   const basePath = opfPath.includes('/') ? opfPath.slice(0, opfPath.lastIndexOf('/') + 1) : '';
 
-  const metaEl = doc.querySelector('metadata');
-  const manifestEl = doc.querySelector('manifest');
-  const spineEl = doc.querySelector('spine');
+  const metaEl = doc.getElementsByTagName('metadata')[0] ?? null;
+  const manifestEl = doc.getElementsByTagName('manifest')[0] ?? null;
+  const spineEl = doc.getElementsByTagName('spine')[0] ?? null;
 
   if (!metaEl || !manifestEl || !spineEl)
     return Promise.reject(new Error('Invalid OPF: missing required elements'));
@@ -124,7 +132,8 @@ function toArray(val: unknown): DomNode[] {
 }
 
 function elementIndex(el: Element): number {
-  const parent = el.parentElement;
+  const parent = (el.parentElement ?? el.parentNode) as Element | null;
   if (!parent) return 0;
-  return Array.from(parent.children).indexOf(el);
+  const siblings = Array.from(parent.childNodes).filter((n) => n.nodeType === 1) as Element[];
+  return siblings.indexOf(el);
 }

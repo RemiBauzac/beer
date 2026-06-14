@@ -65,6 +65,10 @@ const worker = {
         spine: opfData.spine,
         encryptionItems,
       };
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Error parsing EPUB:', err);
+      throw err;
     } finally {
       await zipReader.close();
     }

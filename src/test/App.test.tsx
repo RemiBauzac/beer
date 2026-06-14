@@ -26,13 +26,14 @@ beforeAll(() => {
       dispatchEvent: vi.fn(),
     })),
   });
+  window.scrollTo = vi.fn();
 });
 
 import App from '../App';
 
 describe('App', () => {
-  it('renders library page', () => {
+  it('renders library page', async () => {
     render(<App />);
-    expect(screen.getByText('BEER')).toBeInTheDocument();
+    expect(await screen.findByText('BEER')).toBeInTheDocument();
   });
 });

@@ -1,86 +1,70 @@
-# CLAUDE.md
+# Project Instructions for AI Agents
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides instructions and context for AI coding agents working on this project.
 
-## Commands
+<!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->
+
+## Beads Issue Tracker
+
+This project uses **bd (beads)** for issue tracking. Run `bd prime` to see full workflow context and commands.
+
+### Quick Reference
 
 ```bash
-npm install          # install deps
-npm run dev          # start HTTPS Vite dev server
-npm run build        # production build → dist/
-npm run preview      # serve dist/ locally (HTTPS)
-npm run lint         # eslint with autofix (skips app/lib/)
+bd ready              # Find available work
+bd show <id>          # View issue details
+bd update <id> --claim  # Claim work
+bd close <id>         # Complete work
 ```
 
-No test suite exists.
+### Rules
 
-**HTTPS required for service workers.** `@vitejs/plugin-basic-ssl` auto-generates a self-signed cert. On first run, trust it in your browser/OS trust store (download from the lock icon in the URL bar).
+- Use `bd` for ALL task tracking — do NOT use TodoWrite, TaskCreate, or markdown TODO lists
+- Run `bd prime` for detailed command reference and session close protocol
+- Use `bd remember` for persistent knowledge — do NOT use MEMORY.md files
 
-## Architecture
+## Session Completion
 
-BEER is a browser-only ePub reader. No backend. The entire epub parsing and file serving happens in a Service Worker.
+**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
 
-### Data flow
+**MANDATORY WORKFLOW:**
 
-1. `main.js` calls `Beer.init()` → registers the SW (`app/sw/install.js`)
-2. `Beer.withBookUrl(url)` sends `{hash, url}` message to SW via `postMessage`
-3. SW stores the epub reference in `self.zips[hash]`
-4. Main thread fetches epub internals via `fetch('/___/<hash>/<path>')` — SW intercepts these requests, reads from the zip (via `@zip.js/zip.js`), optionally decrypts, caches, and returns responses
-5. `beer.js` parses `META-INF/container.xml` → OPF → builds `Book` model → selects display mode
+1. **File issues for remaining work** - Create issues for anything that needs follow-up
+2. **Run quality gates** (if code changed) - Tests, linters, builds
+3. **Update issue status** - Close finished work, update in-progress items
+4. **PUSH TO REMOTE** - This is MANDATORY:
+   ```bash
+   git pull --rebase
+   bd dolt push
+   git push
+   git status  # MUST show "up to date with origin"
+   ```
+5. **Clean up** - Clear stashes, prune remote branches
+6. **Verify** - All changes committed AND pushed
+7. **Hand off** - Provide context for next session
 
-### Build pipeline
+**CRITICAL RULES:**
 
-Vite produces two bundles from `app/`:
-- `dist/main.js` — entry point, wires `Beer` to DOM, keyboard controls
-- `dist/beer.js` — `Beer` class + models + display classes (importable as a library)
+- Work is NOT complete until `git push` succeeds
+- NEVER stop before pushing - that leaves work stranded locally
+- NEVER say "ready to push when you are" - YOU must push
+- If push fails, resolve and retry until it succeeds
+<!-- END BEADS INTEGRATION -->
 
-The service worker (`dist/beer-service-worker.js`) is built by a custom Vite plugin (`beerPlugin` in [vite.config.js](vite.config.js)) that concatenates three files in order:
-1. `node_modules/@zip.js/zip.js/dist/zip-fs.min.js` — zip library (exposes `zip` global)
-2. `app/sw/file-decryptor.js` — `FileDecryptor` class (uses `zip` global)
-3. `app/sw/beer-service-worker.js` — SW event handlers (uses `zip` and `FileDecryptor`)
+## Build & Test
 
-So `app/sw/beer-service-worker.js` is hand-concatenated, not ES-module aware — no `import`/`export`. The same plugin also serves `/beer-service-worker.js`, `/epubs/*`, and copies `favicon.ico` during build.
+_Add your build and test commands here_
 
-`app/lib/dom-to-json.js` is a tiny native DOM→object converter (replaces vendored x2js). Attributes map to `_attrName`, text content to `__text`, multiple same-tag children collapse to arrays.
-
-### Key modules
-
-| Path | Role |
-|------|------|
-| `app/beer.js` | `Beer` class — public API: `init()`, `withBookUrl()`, `displayBook()` |
-| `app/model/book.js` | `Book` — metadata, spine items, fixed vs reflowable layout |
-| `app/model/opf.js` | Parses OPF XML → metadata + spine |
-| `app/model/encryption.js` | Parses `encryption.xml` → per-item algorithm + key |
-| `app/sw/beer-service-worker.js` | SW: fetch intercept, zip extraction, cache strategy |
-| `app/sw/file-decryptor.js` | Font deobfuscation (IDPF XOR, Adobe XOR) |
-| `app/display/base.js` | Base display class — theme, zoom, margin constants |
-| `app/display/page.js` | Paginated display (default) |
-| `app/display/scroll.js` | Scroll display |
-| `app/display/fixed.js` | Fixed-layout display |
-
-### URL convention
-
-Epub file requests use path `/___/<sha1-hash>/<internal-epub-path>`. The SW matches `zipPattern: /___\/(\w+)\/(.*)$/` to identify and serve these.
-
-### Epub access modes
-
-SW supports two modes for epub access (see `getZipFs`):
-- **Blob mode**: epub fetched upfront, passed as blob via `postMessage` — `zip.importBlob(blob)`
-- **Range-request mode**: epub URL passed, SW fetches lazily with HTTP range requests — `zip.importHttpContent(url, {useRangeHeader: true})`
-
-Currently `main.js` uses range-request mode (sends URL only, no blob).
-
-### Display options
-
-```js
-{
-  mode: 'page' | 'scroll' | 'fixed',  // fixed auto-selected for fixed-layout epubs
-  columnCount: 1 | 2,
-  margin: Number,   // px
-  theme: 'auto' | 'light' | 'night',
-  ratio: Number,    // zoom ratio
-  cfi: String       // optional EPUB CFI to restore position
-}
+```bash
+# Example:
+# npm install
+# npm test
 ```
 
-Keyboard shortcuts: `←/→` prev/next, `↑/↓` zoom, `1/2` columns, `M/m` margin, `t` toggle theme, `a` auto theme.
+## Architecture Overview
+
+_Add a brief overview of your project architecture_
+
+## Conventions & Patterns
+
+_Add your project-specific conventions here_

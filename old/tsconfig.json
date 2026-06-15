@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "target": "ES2021",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": false,
+    "noEmit": true
+  },
+  "include": ["app/**/*.js", "app/**/*.jsx"],
+  "exclude": ["app/lib/**"]
+}

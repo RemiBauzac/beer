@@ -1,59 +1,35 @@
 import js from '@eslint/js';
-import tseslint from 'typescript-eslint';
-import importPlugin from 'eslint-plugin-import';
-import nPlugin from 'eslint-plugin-n';
-import promisePlugin from 'eslint-plugin-promise';
 import globals from 'globals';
+import reactHooks from 'eslint-plugin-react-hooks';
+import reactRefresh from 'eslint-plugin-react-refresh';
+import tseslint from 'typescript-eslint';
+import prettier from 'eslint-config-prettier';
+import { defineConfig, globalIgnores } from 'eslint/config';
 
-export default tseslint.config(
-  { ignores: ['app/lib/**'] },
-  js.configs.recommended,
-  ...tseslint.configs.recommended,
-  importPlugin.flatConfigs.recommended,
-  nPlugin.configs['flat/recommended'],
-  promisePlugin.configs['flat/recommended'],
+export default defineConfig([
+  globalIgnores(['dist', 'src/components/ui']),
   {
-    files: ['app/**/*.js', 'app/**/*.jsx'],
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      js.configs.recommended,
+      tseslint.configs.recommended,
+      tseslint.configs.recommendedTypeChecked,
+      reactHooks.configs.flat.recommended,
+      reactRefresh.configs.vite,
+      prettier,
+    ],
     languageOptions: {
-      globals: {
-        ...globals.browser,
-        ...globals.es2021,
-      },
+      globals: globals.browser,
       parserOptions: {
         projectService: true,
         tsconfigRootDir: import.meta.dirname,
       },
     },
     rules: {
-      quotes: ['error', 'single'],
-      semi: ['error', 'always'],
-      indent: ['error', 2],
-      'no-multi-spaces': ['error'],
-      'space-before-function-paren': ['error', {
-        anonymous: 'never',
-        named: 'never',
-        asyncArrow: 'never',
-      }],
-      eqeqeq: ['error', 'smart'],
-      'no-var': ['error'],
-      'no-return-assign': ['error', 'always'],
-      'no-console': 'off',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-      'n/no-unsupported-features/node-builtins': 'off',
-      '@typescript-eslint/no-this-alias': 'off',
+      'no-console': 'warn',
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-floating-promises': 'error',
+      'react-hooks/exhaustive-deps': 'error',
     },
   },
-  {
-    files: ['app/sw/*.js'],
-    languageOptions: {
-      globals: {
-        ...globals.serviceworker,
-        zip: 'readonly',
-        FileDecryptor: 'readonly',
-      },
-    },
-    rules: {
-      '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^FileDecryptor$' }],
-    },
-  },
-);
+]);

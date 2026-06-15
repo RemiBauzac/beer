@@ -1,0 +1,35 @@
+{
+  "name": "BEER",
+  "version": "0.1.1",
+  "description": "BEst Epub Reader",
+  "main": "dist/beer.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite -d",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint --fix app/"
+  },
+  "repository": "git+https://github.com/johanpoirier/beer.git",
+  "keywords": [],
+  "author": "Johan Poirier <johan.poirier@gmail.com> (https://twitter.com/johanpoirier)",
+  "license": "Apache License 2.0",
+  "bugs": {
+    "url": "https://github.com/johanpoirier/beer/issues"
+  },
+  "homepage": "https://github.com/johanpoirier/beer#readme",
+  "devDependencies": {
+    "@vitejs/plugin-basic-ssl": "^2.3.0",
+    "eslint": "^9.39.4",
+    "eslint-config-love": "^154.0.0",
+    "eslint-plugin-n": "^18.0.1",
+    "eslint-plugin-promise": "^7.3.0",
+    "globals": "^17.6.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.16"
+  },
+  "dependencies": {
+    "@zip.js/zip.js": "^2.8.26"
+  },
+  "private": true
+}

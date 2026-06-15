@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0">
+  <meta name="author" content="JoPs">
+  <meta http-equiv="cache-control" content="no-cache">
+  <meta http-equiv="pragma" content="no-cache">
+  <meta http-equiv="expires" content="0">
+  <title>BEst Epub Reader</title>
+  <style>
+    *, *:before, *:after {
+      box-sizing: border-box;
+      -moz-box-sizing: border-box;
+      -webkit-box-sizing: border-box;
+    }
+
+    body {
+      background-color: black;
+      display: flex;
+      justify-content: center;
+      margin: 0;
+      overflow: hidden;
+      padding: 0;
+    }
+
+    main {
+      background-color: white;
+      height: 100vh;
+      overflow: hidden;
+      width: 100%;
+    }
+
+    main.scroll {
+      overflow-y: scroll;
+      scroll-behavior: smooth;
+    }
+
+    main.fixed {
+      display: flex;
+      justify-content: center;
+    }
+
+    iframe {
+      border: none;
+      height: 100%;
+      overflow-x: hidden;
+      transition: opacity 300ms ease-in-out;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <main></main>
+  <script type="module" src="./app/main.js"></script>
+</body>
+</html>
